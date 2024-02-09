@@ -75,7 +75,7 @@ def translate_text():
     # Logging the target language code
     logging.debug(f"Target language code: {target_language_code}")
 
-    deepL_api_key = '3bf6993a-c2bf-f760-715e-dd6f4024b659:fx'  # Your DeepL API key
+    deepL_api_key = ''  
     url = "https://api-free.deepl.com/v2/translate"
 
     params = {
