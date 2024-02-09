@@ -1,0 +1,21 @@
+your_project_name/
+│
+├── src/
+│   ├── main.py
+│   ├── transcription/
+│   ├── translation/
+│   └── text_to_speech/
+│
+├── venv/
+│
+├── tests/
+│
+├── docs/
+│
+├── data/
+│
+├── requirements.txt
+│
+├── .gitignore
+│
+└── README.md

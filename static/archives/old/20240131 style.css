@@ -1,0 +1,42 @@
+body {
+  background-color: #121212; /* Very dark gray, almost black */
+  color: #E0E0E0; /* Light grey for text */
+  font-family: 'Roboto', sans-serif;
+  line-height: 1.6;
+}
+
+button, select {
+  background-color: #0D47A1; /* Vibrant Blue for buttons and dropdowns */
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  margin: 5px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Roboto', sans-serif;
+  transition: background-color 0.3s;
+}
+
+button:hover, select:hover {
+  background-color: #0D47A1; /* Slightly darker blue on hover */
+}
+
+#transcribed-text-box, #translated-text-box {
+  background-color: #1E1E1E; /* Slightly lighter than body for contrast */
+  border: 1px solid #333;
+  color: #E0E0E0; /* Light grey text for readability */
+  padding: 15px;
+  min-height: 100px;
+  overflow-y: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-family: 'Courier New', monospace;
+}
+
+/* Styling for dropdown options */
+option {
+  background-color: #121212; /* Same as body for a cohesive look */
+  color: #E0E0E0; /* Light grey for readability */
+}
+
+/* Additional styles for headings, links, etc., can be added as needed */

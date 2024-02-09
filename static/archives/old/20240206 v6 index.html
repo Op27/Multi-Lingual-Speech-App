@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multilingual Speech App</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js"></script>
+
+</head>
+<body>
+
+    <button id="start-record-btn">Start Recording</button>
+    <div id="recordingIndicator" style="display:none;">🔴 Recording...</div>
+    <div id="processingIndicator" style="display:none;">⏳ Processing...</div>
+    <div id="playbackIndicator" style="display:none;">🔊 Playing...</div>
+
+    <div>
+        <h2>Transcribed Text:</h2>
+        <div id="transcribed-text-box"></div>
+    </div>
+
+    <div>
+        <h2>Translated Text:</h2>
+        <select id="language-dropdown">
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="Ukrainian">Ukrainian</option>
+        </select>
+        <div id="translated-text-box"></div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    
+</body>
+</html>

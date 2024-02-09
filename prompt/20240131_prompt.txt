@@ -1,0 +1,442 @@
+/start
+- We are continuing work on my multilingual speech application using Flask. We need to address a few remaining issues: improving sentence separation in transcriptions, adding a waiting indicator, solve the issue of "playing" icon to be displayed while playing translated audio, fixing occasional multiple speech playbacks, and adding Ukrainian as a language option. 
+- See below details about the purpuse of the application, current status, key issues to address. 
+- In your response, please use "we" as this is a collaborative work. 
+- In your every response, please start by the professor synapse icon. 
+- To avoid mistakes, please suggest one changes/addition at each time so that I can test the changes. 
+- Provide a full code of a particular section that needs to be updated/revised for app.py file to avoid mistakes in reflecting the updated changes.
+ 
+Purpose of the Application:
+Objective: Developing a multilingual speech application with a Flask backend.
+Functionality: The app records audio in English, transcribes it, translates the transcription into selected languages (currently Spanish or French), and synthesizes speech from the translated text.
+
+Current Status:
+Transcription and Translation: Functional, but there are issues with sentence separation in the transcribed text.
+Performance: The app takes more than 8 seconds to produce transcribed texts, leading to a need for a visual indicator during the waiting period.
+Improving visual indicator: We have an indicator that is shown while playing the translated speech. This is not functioning now, which needs to be solved.  
+Speech Synthesis: Occasionally, multiple speeches are played simultaneously instead of just one.
+Language Addition: Considering adding Ukrainian to the language options.
+
+Key Issues to Address:
+Sentence Separation: Improve the transcription to correctly separate sentences with periods.
+Waiting Indicator: Implement a visual indicator to inform users when the app is processing audio.
+Single Audio Playback: Address the issue of multiple speeches being played at times.
+Improving visual indicator: We have an indicator that is shown while playing the translated speech. This is not functioning now, which needs to be solved.  
+Language Addition: Explore the feasibility of adding Ukrainian to the translation options without major changes.
+
+Next Steps for Addressing Issues:
+Let us start by a simple and easier issue to solve from the following items. 
+Sentence Separation: Review the transcription logic to ensure sentences are correctly punctuated.
+Waiting Indicator: Implement a visual "loading" or "processing" indicator in the frontend.
+Single Audio Playback: Investigate the cause of multiple audio playbacks and implement a fix.
+Adding Ukrainian: Check the feasibility and impact of adding Ukrainian to the language selection, considering the translation API's capabilities.
+
+###index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multilingual Speech App</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js"></script>
+
+</head>
+<body>
+
+    <button id="start-record-btn">Start Recording</button>
+    <div id="recordingIndicator" style="display:none;">🔴 Recording...</div>
+    <div id="playbackIndicator" style="display:none;">🔊 Playing...</div>
+
+
+    <div>
+        <h2>Transcribed Text:</h2>
+        <div id="transcribed-text-box"></div>
+    </div>
+
+    <div>
+        <h2>Translated Text:</h2>
+        <select id="language-dropdown" onchange="handleLanguageChange()">
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+        </select>
+        <div id="translated-text-box"></div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    
+</body>
+</html>
+
+
+###app.py code
+from flask import Flask, request, jsonify, Response
+import requests
+from google.cloud import speech, texttospeech
+from pydub import AudioSegment
+import io
+import logging
+from datetime import datetime  # Add this import at the beginning of your file
+from google.cloud import texttospeech
+
+logging.basicConfig(level=logging.DEBUG)
+
+app = Flask(__name__)
+
+# Initialize Google Cloud Speech and Text-to-Speech clients
+speech_client = speech.SpeechClient()
+tts_client = texttospeech.TextToSpeechClient()
+
+@app.route('/upload_audio', methods=['POST'])
+def upload_audio(audio_file=None):
+    if not audio_file:
+        if 'audio' not in request.files:
+            return jsonify({"message": "No audio file in request"}), 400
+        audio_file = request.files['audio']
+
+    audio_data = audio_file.read()
+    audio_segment = AudioSegment.from_file(io.BytesIO(audio_data)).set_channels(1)
+
+    if audio_segment.sample_width != 2:
+        audio_segment = audio_segment.set_sample_width(2)
+    if audio_segment.frame_rate != 16000:
+        audio_segment = audio_segment.set_frame_rate(16000)
+
+    audio_bytes = audio_segment.raw_data
+
+    audio = speech.RecognitionAudio(content=audio_bytes)
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code="en-US",
+        audio_channel_count=1
+    )
+
+    try:
+        response = speech_client.recognize(config=config, audio=audio)
+        transcript = response.results[0].alternatives[0].transcript
+        return jsonify({"transcript": transcript})
+    except Exception as e:
+        return jsonify({"message": "Error processing audio", "error": str(e)}), 500
+
+language_code_map = {
+    'Spanish': 'es',  # Spanish language code
+    'French': 'fr',   # Corrected French language code
+    # Add other languages and their codes as needed
+}
+
+
+@app.route('/translate_text', methods=['POST'])
+def translate_text():
+    data = request.get_json(force=True)
+
+    # Logging the received data for debugging
+    logging.debug(f"Received data for translation: {data}")
+
+    text_to_translate = data.get('text')
+    target_language = data.get('language').capitalize()
+
+    # Check if the target language is supported
+    if target_language not in language_code_map:
+        return jsonify({"message": f"Unsupported target language: {target_language}"}), 400
+
+    target_language_code = language_code_map[target_language]
+
+    # Logging the target language code
+    logging.debug(f"Target language code: {target_language_code}")
+
+    deepL_api_key = ''  # Your DeepL API key
+    url = "https://api-free.deepl.com/v2/translate"
+
+    params = {
+        'auth_key': deepL_api_key,
+        'text': text_to_translate,
+        'target_lang': target_language_code
+    }
+
+    response = requests.post(url, data=params)
+
+    # Logging the response from the DeepL API
+    logging.debug(f"DeepL API Response: {response.status_code}, {response.text}")
+
+    if response.status_code == 200:
+        translated_text = response.json()['translations'][0]['text']
+        return jsonify({"translated_text": translated_text})
+    else:
+        error_msg = f"DeepL API error: {response.status_code} - {response.text}"
+        logging.error(error_msg)
+        return jsonify({"message": "Translation failed", "error": error_msg}), response.status_code
+
+tts_language_voice_map = {
+        'es': 'es-ES-Standard-B',  # Spanish male voice
+        'fr': 'fr-FR-Standard-B',  # French male voice
+        # Add other mappings as needed
+    }
+
+@app.route('/synthesize_speech', methods=['POST'])
+def synthesize_speech():
+    data = request.get_json()
+    text = data.get('text')
+    language_code = data.get('language', 'en-US')  # Default to US English if not provided
+
+# Retrieve the voice name from the mapping
+    voice_name = tts_language_voice_map.get(language_code, 'en-US-Standard-B')  # Default to a US English male voice
+
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=language_code,  # Use the language code here
+        name=voice_name,              # Use the mapped voice name
+        ssml_gender=texttospeech.SsmlVoiceGender.MALE
+    )
+    audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+
+    try:
+        response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
+
+        if len(response.audio_content) == 0:
+            logging.error("No audio content generated by the Text-to-Speech API.")
+            return jsonify({"message": "Error synthesizing speech: No audio content"}), 500
+        
+        return Response(response.audio_content, mimetype='audio/mp3')
+
+    except Exception as e:
+        logging.error(f"Error in text-to-speech synthesis: {e}")
+        return jsonify({"message": "Error in text-to-speech synthesis", "error": str(e)}), 500
+
+
+@app.route('/process_audio', methods=['POST'])
+def process_audio():
+    logging.debug("process_audio endpoint called") 
+    if 'audio' not in request.files or 'language' not in request.form:
+        logging.error("Audio file or language not provided in the request.")
+        return jsonify({"message": "Audio file or language not provided"}), 400
+
+    audio_file = request.files['audio']
+    selected_language = request.form['language']
+
+    # Debug log for received audio file and selected language
+    logging.debug(f"Received audio file: {audio_file.filename}")
+    logging.debug(f"Selected language: {selected_language}")
+    
+
+    try:
+        # Save the received audio file for debugging
+        # temp_audio_filename = f"temp_audio_{datetime.now().strftime('%Y%m%d%H%M%S')}.wav"
+        # logging.debug(f"Attempting to save audio file: {temp_audio_filename}")
+        # try:
+        #     audio_file.save(temp_audio_filename)
+        #     logging.debug(f"Audio file saved: {temp_audio_filename}")
+        # except Exception as e:
+        #     logging.error(f"Error saving audio file: {e}")
+        #     return jsonify({"message": f"Error saving audio file: {str(e)}"}), 500
+
+        audio_file.seek(0)  # Reset file read pointer
+        audio_data = audio_file.read()
+        logging.debug(f"Size of audio data: {len(audio_data)} bytes")
+
+        audio_segment = AudioSegment.from_file(io.BytesIO(audio_data)).set_channels(1)
+        logging.debug(f"Audio Segment: Channels - {audio_segment.channels}, Frame Rate - {audio_segment.frame_rate}, Sample Width - {audio_segment.sample_width}")
+
+        if audio_segment.sample_width != 2:
+            audio_segment = audio_segment.set_sample_width(2)
+        if audio_segment.frame_rate != 16000:
+            audio_segment = audio_segment.set_frame_rate(16000)
+
+
+        audio_bytes = audio_segment.raw_data
+        audio = speech.RecognitionAudio(content=audio_bytes)
+        config = speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            language_code="en-US",
+            audio_channel_count=1
+        )
+
+        response = speech_client.recognize(config=config, audio=audio)
+
+        if not response.results:
+            logging.error("No transcription results.")
+            return jsonify({"message": "Error in transcription: No results"}), 500
+
+        transcript = response.results[0].alternatives[0].transcript
+        logging.debug(f"Transcript (English): {transcript}")
+        
+        transcript = response.results[0].alternatives[0].transcript
+
+        logging.debug(f"Transcript (English): {transcript}")
+
+        # Translate the transcript
+        translation_response = requests.post('http://localhost:5000/translate_text', json={'text': transcript, 'language': selected_language})
+        if translation_response.status_code != 200:
+            return jsonify({"message": "Error translating text"}), translation_response.status_code
+        translated_text = translation_response.json()['translated_text']
+
+        logging.debug(f"Translated text (Target Language - {selected_language}): {translated_text}")
+
+        # Synthesize speech from the translated text
+        speech_response = requests.post('http://localhost:5000/synthesize_speech', json={'text': translated_text, 'language': selected_language})
+        if speech_response.status_code != 200:
+            return jsonify({"message": "Error synthesizing speech"}), speech_response.status_code
+        audio_content = speech_response.content
+
+        logging.debug(f"Type of audio content: {type(audio_content)}")
+        logging.debug(f"Length of audio content: {len(audio_content)}")
+        logging.debug(f"Transcription and translation completed successfully.")
+
+        return jsonify({"transcript": transcript, "translated_text": translated_text})
+
+    except Exception as e:
+        logging.error(f"Error in processing audio: {e}")
+        return jsonify({"message": "Error in processing audio", "error": str(e)}), 500
+
+
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+###style.css
+body {
+  background-color: #121212; /* Very dark gray, almost black */
+  color: #E0E0E0; /* Light grey for text */
+  font-family: 'Roboto', sans-serif;
+  line-height: 1.6;
+}
+
+button, select {
+  background-color: #0D47A1; /* Vibrant Blue for buttons and dropdowns */
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  margin: 5px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Roboto', sans-serif;
+  transition: background-color 0.3s;
+}
+
+button:hover, select:hover {
+  background-color: #0D47A1; /* Slightly darker blue on hover */
+}
+
+#transcribed-text-box, #translated-text-box {
+  background-color: #1E1E1E; /* Slightly lighter than body for contrast */
+  border: 1px solid #333;
+  color: #E0E0E0; /* Light grey text for readability */
+  padding: 15px;
+  min-height: 100px;
+  overflow-y: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-family: 'Courier New', monospace;
+}
+
+/* Styling for dropdown options */
+option {
+  background-color: #121212; /* Same as body for a cohesive look */
+  color: #E0E0E0; /* Light grey for readability */
+}
+
+
+
+###script.js
+document.addEventListener('DOMContentLoaded', function() {
+    const startRecordBtn = document.getElementById('start-record-btn');
+    const transcribedTextBox = document.getElementById('transcribed-text-box');
+    const translatedTextBox = document.getElementById('translated-text-box');
+
+    let isRecording = false;
+    let mediaRecorder;
+    let audioChunks = [];
+    let currentAudio = null;
+
+    startRecordBtn.addEventListener('click', function() {
+        if (!isRecording) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+        isRecording = !isRecording;
+    });
+
+    function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+
+            document.getElementById('recordingIndicator').style.display = 'block'; // Show recording indicator
+
+            mediaRecorder.ondataavailable = function(e) {
+                audioChunks.push(e.data);
+            };
+        });
+    startRecordBtn.textContent = 'Stop Recording';
+}
+
+    function stopRecording() {
+        mediaRecorder.stop();
+        startRecordBtn.textContent = 'Start Recording';
+
+        document.getElementById('recordingIndicator').style.display = 'none'; // Hide recording indicator
+
+        mediaRecorder.onstop = function(e) {
+            sendAudioToServer(); // Call this function to send audio to server
+        };
+
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+
+    function sendAudioToServer() {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const formData = new FormData();
+        
+        formData.append('audio', audioBlob);
+        const selectedLanguage = document.getElementById('language-dropdown').value;
+        formData.append('language', selectedLanguage);
+
+        fetch('http://127.0.0.1:5000/process_audio', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        }).then(data => {
+            transcribedTextBox.textContent = data.transcript;
+            translatedTextBox.textContent = data.translated_text;
+
+            // Play the translated text
+            playSynthesizedSpeech(data.translated_text, selectedLanguage);
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    function playSynthesizedSpeech(text, language) {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+
+        fetch('http://127.0.0.1:5000/synthesize_speech', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: text, language: language })
+        }).then(response => response.blob())
+        .then(blob => {
+            const audioUrl = URL.createObjectURL(blob);
+            currentAudio = new Audio(audioUrl);
+            currentAudio.play();
+        }).catch(error => console.error('Error:', error));
+    }
+
+    }
+);
