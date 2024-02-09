@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let mediaRecorder;
     let audioChunks = [];
     let currentAudio = null;
-    let isSynthesizingSpeech = false; // Flag to prevent duplicate speech synthesis
-    let audioQueue = []; // Initialize an empty queue
+    let isSynthesizingSpeech = false; 
+    let audioQueue = []; 
 
     function generateUniqueId() {
         return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function startRecording() {
         audioChunks = [];
-        const recordingSessionId = generateUniqueId(); // Generate a unique ID for this session
+        const recordingSessionId = generateUniqueId(); 
         sessionStorage.setItem('recordingSessionId', recordingSessionId);
 
         navigator.mediaDevices.getUserMedia({ audio: true })
@@ -72,18 +72,18 @@ document.addEventListener('DOMContentLoaded', function() {
         mediaRecorder.stop();
         startRecordBtn.textContent = 'Start Recording';
         document.getElementById('recordingIndicator').style.display = 'none';
-        mediaRecorder.onstop = sendAudioToServer; // Call sendAudioToServer when the recording stops
-        mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Stop the media stream
+        mediaRecorder.onstop = sendAudioToServer; 
+        mediaRecorder.stream.getTracks().forEach(track => track.stop()); 
     }
 
     function sendAudioToServer() {
         processingIndicator.style.display = 'block';
     
         const audioBlob = new Blob(audioChunks, {type: 'audio/wav'});
-        const selectedLanguage = document.getElementById('language-dropdown').value; // Correctly initialize selectedLanguage
+        const selectedLanguage = document.getElementById('language-dropdown').value; 
         const formData = new FormData();
         formData.append('audio', audioBlob);
-        formData.append('language', selectedLanguage); // Use the initialized selectedLanguage
+        formData.append('language', selectedLanguage); 
     
         fetch('http://127.0.0.1:5000/process_audio', {
             method: 'POST',
@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         isSynthesizingSpeech = true;
     
-        // Directly fetch and enqueue the audio without intermediate handling
         fetch('http://127.0.0.1:5000/synthesize_speech', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},

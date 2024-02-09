@@ -4,7 +4,7 @@ from google.cloud import speech, texttospeech
 from pydub import AudioSegment
 import io
 import logging
-from datetime import datetime  # Add this import at the beginning of your file
+from datetime import datetime  
 from google.cloud import texttospeech
 
 logging.basicConfig(level=logging.DEBUG)
@@ -50,34 +50,28 @@ def upload_audio(audio_file=None):
         return jsonify({"message": "Error processing audio", "error": str(e)}), 500
 
 language_code_map = {
-    'Spanish': 'es',  # Spanish language code
-    'French': 'fr',   # Corrected French language code
-    # Add other languages and their codes as needed
+    'Spanish': 'es',  
+    'French': 'fr',   
 }
-
 
 @app.route('/translate_text', methods=['POST'])
 def translate_text():
     data = request.get_json(force=True)
 
-    # Logging the received data for debugging
     logging.debug(f"Received data for translation: {data}")
 
     text_to_translate = data.get('text')
     target_language = data.get('language').capitalize()
 
-    # Check if the target language is supported
     if target_language not in language_code_map:
         return jsonify({"message": f"Unsupported target language: {target_language}"}), 400
 
     target_language_code = language_code_map[target_language]
 
-    # Logging the target language code
     logging.debug(f"Target language code: {target_language_code}")
 
     deepL_api_key = ''  
     url = "https://api-free.deepl.com/v2/translate"
-
     params = {
         'auth_key': deepL_api_key,
         'text': text_to_translate,
@@ -85,8 +79,6 @@ def translate_text():
     }
 
     response = requests.post(url, data=params)
-
-    # Logging the response from the DeepL API
     logging.debug(f"DeepL API Response: {response.status_code}, {response.text}")
 
     if response.status_code == 200:
@@ -97,7 +89,6 @@ def translate_text():
         logging.error(error_msg)
         return jsonify({"message": "Translation failed", "error": error_msg}), response.status_code
 
-
 @app.route('/synthesize_speech', methods=['POST'])
 def synthesize_speech():
     data = request.get_json()
@@ -106,8 +97,8 @@ def synthesize_speech():
     selected_language = data.get('language', 'en-US')
 
     tts_language_voice_map = {
-        'es': ('es-ES', 'es-ES-Neural2-F'),  # Spanish voice
-        'fr': ('fr-FR', 'fr-FR-Neural2-B'),  # French voice
+        'es': ('es-ES', 'es-ES-Neural2-F'),  
+        'fr': ('fr-FR', 'fr-FR-Neural2-B'),  
     }
 
     if not text:
@@ -116,7 +107,6 @@ def synthesize_speech():
     else:
             logging.debug(f"Synthesizing speech for text: {text}")
 
-    # Get the detailed language code and voice name, default to US English if not found
     language_code, voice_name = tts_language_voice_map.get(selected_language, ('en-US', 'en-US-Standard-B'))
 
     synthesis_input = texttospeech.SynthesisInput(text=text)
@@ -139,7 +129,6 @@ def synthesize_speech():
         return jsonify({"message": "Error in text-to-speech synthesis", "error": str(e)}), 500
 
 
-
 @app.route('/process_audio', methods=['POST'])
 def process_audio():
     
@@ -159,25 +148,12 @@ def process_audio():
     selected_language = request.form['language']
     
     logging.debug(f"Processing audio for language: {selected_language}")
-
-
-    # Debug log for received audio file and selected language
     logging.debug(f"Received audio file: {audio_file.filename}")
     logging.debug(f"Selected language: {selected_language}")
     
 
     try:
-        # Save the received audio file for debugging
-        # temp_audio_filename = f"temp_audio_{datetime.now().strftime('%Y%m%d%H%M%S')}.wav"
-        # logging.debug(f"Attempting to save audio file: {temp_audio_filename}")
-        # try:
-        #     audio_file.save(temp_audio_filename)
-        #     logging.debug(f"Audio file saved: {temp_audio_filename}")
-        # except Exception as e:
-        #     logging.error(f"Error saving audio file: {e}")
-        #     return jsonify({"message": f"Error saving audio file: {str(e)}"}), 500
-
-        audio_file.seek(0)  # Reset file read pointer
+        audio_file.seek(0)  
         audio_data = audio_file.read()
         logging.debug(f"Size of audio data: {len(audio_data)} bytes")
 
@@ -211,10 +187,8 @@ def process_audio():
         logging.debug(f"Transcript (English): {transcript}")
         
         transcript = response.results[0].alternatives[0].transcript
-
         logging.debug(f"Transcript (English): {transcript}")
 
-        # Translate the transcript
         translation_response = requests.post('http://localhost:5000/translate_text', json={'text': transcript, 'language': selected_language})
         if translation_response.status_code != 200:
             return jsonify({"message": "Error translating text"}), translation_response.status_code
@@ -222,7 +196,6 @@ def process_audio():
 
         logging.debug(f"Translated text (Target Language - {selected_language}): {translated_text}")
 
-        # Synthesize speech from the translated text
         speech_response = requests.post('http://localhost:5000/synthesize_speech', json={'text': translated_text, 'language': selected_language})
         if speech_response.status_code != 200:
             return jsonify({"message": "Error synthesizing speech"}), speech_response.status_code

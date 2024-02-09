@@ -1,12 +1,12 @@
 body {
-  background-color: #121212; /* Very dark gray, almost black */
-  color: #E0E0E0; /* Light grey for text */
+  background-color: #121212; 
+  color: #E0E0E0; 
   font-family: 'Roboto', sans-serif;
   line-height: 1.6;
 }
 
 button, select {
-  background-color: #0D47A1; /* Vibrant Blue for buttons and dropdowns */
+  background-color: #0D47A1; 
   color: #fff;
   border: none;
   padding: 10px 15px;
@@ -18,13 +18,13 @@ button, select {
 }
 
 button:hover, select:hover {
-  background-color: #0D47A1; /* Slightly darker blue on hover */
+  background-color: #0D47A1; 
 }
 
 #transcribed-text-box, #translated-text-box {
-  background-color: #1E1E1E; /* Slightly lighter than body for contrast */
+  background-color: #1E1E1E; 
   border: 1px solid #333;
-  color: #E0E0E0; /* Light grey text for readability */
+  color: #E0E0E0; 
   padding: 15px;
   min-height: 100px;
   overflow-y: auto;
@@ -33,9 +33,8 @@ button:hover, select:hover {
   font-family: 'Courier New', monospace;
 }
 
-/* Styling for dropdown options */
 option {
-  background-color: #121212; /* Same as body for a cohesive look */
-  color: #E0E0E0; /* Light grey for readability */
+  background-color: #121212; 
+  color: #E0E0E0; 
 }
 
