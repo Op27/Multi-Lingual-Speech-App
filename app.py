@@ -93,8 +93,7 @@ def translate_text():
 def synthesize_speech():
     data = request.get_json()
     text = data.get('text')
-
-    selected_language = data.get('language', 'en-US')
+    selected_language = data.get('language', 'es')
 
     tts_language_voice_map = {
         'es': ('es-ES', 'es-ES-Neural2-F'),  
@@ -107,7 +106,7 @@ def synthesize_speech():
     else:
             logging.debug(f"Synthesizing speech for text: {text}")
 
-    language_code, voice_name = tts_language_voice_map.get(selected_language, ('en-US', 'en-US-Standard-B'))
+    language_code, voice_name = tts_language_voice_map.get(selected_language, ('es-ES', 'es-ES-Neural2-F'))
 
     synthesis_input = texttospeech.SynthesisInput(text=text)
     voice = texttospeech.VoiceSelectionParams(
