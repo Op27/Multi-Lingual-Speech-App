@@ -4,7 +4,7 @@
 The Multi-Lingual Speech App uses AI to automate the flow from audio recording through translation to speech synthesis. This application is designed to transcribe speech into text, translate the text from English to Spanish or French, and then synthesize the translated text back into speech.
 
 ## Demo Video
-https://github.com/Op27/Multi-Lingual-Speech-App/assets/39921621/3cb4d683-d493-4284-beef-0cf4b3db07cf
+https://github.com/Op27/Multi-Lingual-Speech-App/assets/39921621/f523d25f-44d0-4f04-a65b-42dcbff4765c
 
 ## Key Features
 - **Automated Audio Processing Workflow:** Streamlines the process of converting spoken words into another language's speech output.
